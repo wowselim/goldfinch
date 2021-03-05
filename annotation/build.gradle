@@ -1,0 +1,22 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib"
+}
+
+publishing {
+  publications {
+    create("maven", MavenPublication.class) {
+      from components.java
+      groupId = getGroup()
+      artifactId = rootProject.name + '-' + project.name
+      version = getVersion()
+    }
+  }
+}

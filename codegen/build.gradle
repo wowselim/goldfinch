@@ -1,0 +1,25 @@
+plugins {
+  id 'org.jetbrains.kotlin.jvm'
+}
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  implementation "org.jetbrains.kotlin:kotlin-stdlib"
+  implementation "com.squareup:kotlinpoet:1.7.2"
+  implementation "com.squareup:kotlinpoet-metadata:1.7.2"
+  implementation project(':annotation')
+}
+
+publishing {
+  publications {
+    create("maven", MavenPublication.class) {
+      from components.java
+      groupId = getGroup()
+      artifactId = rootProject.name + '-' + project.name
+      version = getVersion()
+    }
+  }
+}
