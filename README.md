@@ -4,6 +4,11 @@
 Goldfinch generates kotlin code that lets you iterate
 over the properties of a class exhaustively.
 
+This can be useful when implementing validation
+or custom serialization. The compile-time safety when combined
+with exhaustive `when`-statements guarantees that no
+properties are missed.
+
 ## Getting started
 Simply annotate a class with `@GenerateProperties` to
 enable code generation:
