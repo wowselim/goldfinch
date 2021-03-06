@@ -21,7 +21,7 @@ use the generated extension property `Person#properties`
 like so:
 ```kotlin
 val person = Person("Selim", LocalDate.of(1970, 1, 1))
-selim.properties
+person.properties
   .forEach { property ->
     val message = when (property) {
       is NameProperty -> "Name: ${property.name}"
