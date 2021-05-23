@@ -35,6 +35,7 @@ fun generatePropertyContainer(
 
   val propertySpec = PropertySpec.builder(propertyName, propertyType)
     .initializer(propertyName)
+    .addModifiers(visibility.toKModifier())
     .build()
 
   return TypeSpec.classBuilder("${propertyName.capitalize()}Property")
