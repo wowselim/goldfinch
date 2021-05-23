@@ -1,6 +1,7 @@
 package co.selim.goldfinch.codegen
 
 import co.selim.goldfinch.annotation.GenerateProperties
+import co.selim.goldfinch.annotation.Visibility
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
@@ -32,17 +33,19 @@ class ServiceProcessor : AbstractProcessor() {
       val propertiesWithTypes = metadataClass.properties
         .sortedBy(typeElement.enclosedElements)
         .filter { it.returnType.classifier is KmClassifier.Class }
-        .map { property ->
+        .associate { property ->
           val classifier = property.returnType.classifier as KmClassifier.Class
           val typeParameters = property.returnType.extractFullType()
           val type = classifier.toClassName().safelyParameterizedBy(typeParameters)
           property.name to type
-        }.toMap()
+        }
 
       val annotatedClass = metadataClass.name.replace('/', '.')
+      val annotation = typeElement.getAnnotation(GenerateProperties::class.java)
       generatePropertyExtension(
         ClassName.bestGuess(annotatedClass),
-        propertiesWithTypes
+        propertiesWithTypes,
+        annotation.visibility,
       ).writeTo(processingEnv.filer)
     }
 
@@ -91,17 +94,18 @@ class ServiceProcessor : AbstractProcessor() {
   private fun generatePropertyExtension(
     receiver: ClassName,
     properties: Map<String, TypeName>,
+    visibility: Visibility,
   ): FileSpec {
     val sealedClassName = ClassName(receiver.packageName, "${receiver.simpleName}Property")
-    val sealedClass = generateSealedClass(sealedClassName)
+    val sealedClass = generateSealedClass(sealedClassName, visibility)
     return generateFile(receiver)
       .addType(sealedClass)
       .apply {
         properties.forEach { (propertyName, propertyType) ->
-          addType(generatePropertyContainer(sealedClassName, propertyName, propertyType))
+          addType(generatePropertyContainer(sealedClassName, propertyName, propertyType, visibility))
         }
       }
-      .addProperty(generatePropertyMapper(sealedClassName, receiver, properties))
+      .addProperty(generatePropertyMapper(sealedClassName, receiver, properties, visibility))
       .build()
   }
 }
