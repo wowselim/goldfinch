@@ -1,5 +1,6 @@
 package co.selim.goldfinch.codegen
 
+import co.selim.goldfinch.annotation.Visibility
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 
@@ -12,13 +13,22 @@ internal fun generateFile(
   )
 }
 
-fun generateSealedClass(name: ClassName): TypeSpec {
+fun generateSealedClass(
+  name: ClassName,
+  visibility: Visibility,
+): TypeSpec {
   return TypeSpec.classBuilder(name)
     .addModifiers(KModifier.SEALED)
+    .addModifiers(visibility.toKModifier())
     .build()
 }
 
-fun generatePropertyContainer(sealedType: ClassName, propertyName: String, propertyType: TypeName): TypeSpec {
+fun generatePropertyContainer(
+  sealedType: ClassName,
+  propertyName: String,
+  propertyType: TypeName,
+  visibility: Visibility,
+): TypeSpec {
   val constructor = FunSpec.constructorBuilder()
     .addParameter(propertyName, propertyType)
     .build()
@@ -29,6 +39,7 @@ fun generatePropertyContainer(sealedType: ClassName, propertyName: String, prope
 
   return TypeSpec.classBuilder("${propertyName.capitalize()}Property")
     .addModifiers(KModifier.DATA)
+    .addModifiers(visibility.toKModifier())
     .primaryConstructor(constructor)
     .addProperty(propertySpec)
     .superclass(sealedType)
@@ -39,6 +50,7 @@ internal fun generatePropertyMapper(
   sealedType: ClassName,
   receiver: ClassName,
   properties: Map<String, TypeName>,
+  visibility: Visibility,
 ): PropertySpec {
   val propertyMappings = properties.map { (propertyName, _) ->
     "${propertyName.capitalize()}Property($propertyName),"
@@ -54,5 +66,11 @@ internal fun generatePropertyMapper(
   return PropertySpec.builder("properties", Set::class.asTypeName().parameterizedBy(sealedType))
     .receiver(receiver)
     .getter(getter)
+    .addModifiers(visibility.toKModifier())
     .build()
+}
+
+private fun Visibility.toKModifier(): KModifier = when (this) {
+  Visibility.PUBLIC -> KModifier.PUBLIC
+  Visibility.INTERNAL -> KModifier.INTERNAL
 }
