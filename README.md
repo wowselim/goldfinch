@@ -1,5 +1,6 @@
 # Goldfinch
 [![](https://jitpack.io/v/wowselim/goldfinch.svg)](https://jitpack.io/#wowselim/goldfinch)
+[![](https://github.com/wowselim/goldfinch/workflows/Build/badge.svg)](https://github.com/wowselim/goldfinch)
 
 Goldfinch generates kotlin code that lets you iterate
 over the properties of a class exhaustively.
