@@ -11,7 +11,7 @@ data class Person(
 )
 
 fun main() {
-  val selim = Person("Selim", LocalDate.of(1970, 1, 1))
+  val selim = Person("Selim Dinçer", LocalDate.of(1970, 1, 1))
 
   selim.properties
     .forEach { property ->
