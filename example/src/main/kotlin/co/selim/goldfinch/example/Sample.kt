@@ -1,11 +1,10 @@
 package co.selim.goldfinch.example
 
 import co.selim.goldfinch.annotation.GenerateProperties
-import co.selim.goldfinch.annotation.Visibility
 import java.time.LocalDate
 
-@GenerateProperties(visibility = Visibility.INTERNAL)
-data class Person(
+@GenerateProperties
+internal data class Person(
   val name: String,
   val dateOfBirth: LocalDate,
 )
