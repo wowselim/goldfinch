@@ -2,13 +2,14 @@ package co.selim.goldfinch.codegen
 
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import java.util.*
 
 internal fun generateFile(
   receiver: ClassName
 ): FileSpec.Builder {
   return FileSpec.builder(
     packageName = receiver.packageName,
-    fileName = "${receiver.simpleName.capitalize()}Properties"
+    fileName = "${receiver.simpleName.cap()}Properties"
   )
 }
 
@@ -16,7 +17,7 @@ fun generateSealedClass(
   name: ClassName,
   visibilityModifier: KModifier,
 ): TypeSpec {
-  return TypeSpec.classBuilder(name)
+  return TypeSpec.interfaceBuilder(name)
     .addModifiers(KModifier.SEALED)
     .addModifiers(visibilityModifier)
     .build()
@@ -37,12 +38,13 @@ fun generatePropertyContainer(
     .addModifiers(visibilityModifier)
     .build()
 
-  return TypeSpec.classBuilder("${propertyName.capitalize()}Property")
-    .addModifiers(KModifier.DATA)
+  return TypeSpec.classBuilder("${propertyName.cap()}Property")
+    .addModifiers(KModifier.VALUE)
+    .addAnnotation(JvmInline::class.asTypeName())
     .addModifiers(visibilityModifier)
     .primaryConstructor(constructor)
     .addProperty(propertySpec)
-    .superclass(sealedType)
+    .addSuperinterface(sealedType)
     .build()
 }
 
@@ -53,7 +55,7 @@ internal fun generatePropertyMapper(
   visibilityModifier: KModifier,
 ): PropertySpec {
   val propertyMappings = properties.map { (propertyName, _) ->
-    "${propertyName.capitalize()}Property($propertyName),"
+    "${propertyName.cap()}Property($propertyName),"
   }.joinToString("\n      ")
 
   val code = """
@@ -68,4 +70,8 @@ internal fun generatePropertyMapper(
     .getter(getter)
     .addModifiers(visibilityModifier)
     .build()
+}
+
+private fun String.cap(): String {
+  return replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
 }

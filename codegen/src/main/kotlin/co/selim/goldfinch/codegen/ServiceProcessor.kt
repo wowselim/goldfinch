@@ -8,8 +8,14 @@ import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.metadata.*
+import kotlinx.metadata.KmClass
 import kotlinx.metadata.KmClassifier
-import javax.annotation.processing.*
+import kotlinx.metadata.KmProperty
+import kotlinx.metadata.KmType
+import javax.annotation.processing.AbstractProcessor
+import javax.annotation.processing.RoundEnvironment
+import javax.annotation.processing.SupportedAnnotationTypes
+import javax.annotation.processing.SupportedOptions
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
@@ -17,10 +23,10 @@ import javax.lang.model.util.ElementFilter
 import javax.tools.Diagnostic
 
 @KotlinPoetMetadataPreview
-@SupportedSourceVersion(SourceVersion.RELEASE_8)
 @SupportedOptions("kapt.kotlin.generated")
 @SupportedAnnotationTypes("co.selim.goldfinch.annotation.GenerateProperties")
 class ServiceProcessor : AbstractProcessor() {
+
   override fun process(annotations: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
     val elements = roundEnv.getElementsAnnotatedWith(GenerateProperties::class.java)
     if (elements.isEmpty()) return false
@@ -28,7 +34,7 @@ class ServiceProcessor : AbstractProcessor() {
     val typeElements = ElementFilter.typesIn(elements)
 
     typeElements.forEach { typeElement ->
-      val metadataClass = typeElement.toImmutableKmClass()
+      val metadataClass = typeElement.toKmClass()
       val propertiesWithTypes = metadataClass.properties
         .sortedBy(typeElement.enclosedElements)
         .filter { it.returnType.classifier is KmClassifier.Class }
@@ -44,8 +50,8 @@ class ServiceProcessor : AbstractProcessor() {
       val visibilityModifier = when (annotation.visibility) {
         Visibility.INHERIT -> metadataClass.getVisibilityModifier()
         Visibility.PUBLIC -> {
-          check(metadataClass.isPublic) {
-            "Can't generate public property iterators for non-public class ${metadataClass.name}".also(::logError)
+          if (!metadataClass.flags.isPublic) {
+            logError("Can't generate public property iterators for non-public class ${metadataClass.name}")
           }
           KModifier.PUBLIC
         }
@@ -62,7 +68,7 @@ class ServiceProcessor : AbstractProcessor() {
   }
 
   // recursively extracts the full type of a property e.g. List -> List<List<String>>
-  private fun ImmutableKmType.extractFullType(): List<TypeName> {
+  private fun KmType.extractFullType(): List<TypeName> {
     return arguments.mapNotNull { typeProjection ->
       val params = typeProjection.type?.extractFullType()
 
@@ -83,14 +89,14 @@ class ServiceProcessor : AbstractProcessor() {
     }
   }
 
-  private fun ImmutableKmClass.getVisibilityModifier(): KModifier {
-    check(!isPrivate) {
-      "Can't generate property iterators for private classes".also(::logError)
+  private fun KmClass.getVisibilityModifier(): KModifier {
+    if (flags.isPrivate) {
+      logError("Can't generate property iterators for private classes")
     }
 
     return when {
-      isPublic -> KModifier.PUBLIC
-      isInternal -> KModifier.INTERNAL
+      flags.isPublic -> KModifier.PUBLIC
+      flags.isInternal -> KModifier.INTERNAL
       else -> {
         val message = "Visibility of ${this.name} is not supported"
         logError(message)
@@ -104,7 +110,7 @@ class ServiceProcessor : AbstractProcessor() {
   }
 
   // this hack can be removed after https://youtrack.jetbrains.com/issue/KT-20980 has been fixed
-  private fun List<ImmutableKmProperty>.sortedBy(list: List<Element>): List<ImmutableKmProperty> {
+  private fun List<KmProperty>.sortedBy(list: List<Element>): List<KmProperty> {
     return sortedBy { property ->
       list.indexOfFirst { it.simpleName.toString() == property.name }
     }
@@ -136,5 +142,9 @@ class ServiceProcessor : AbstractProcessor() {
       }
       .addProperty(generatePropertyMapper(sealedClassName, receiver, properties, visibilityModifier))
       .build()
+  }
+
+  override fun getSupportedSourceVersion(): SourceVersion {
+    return SourceVersion.latestSupported()
   }
 }
