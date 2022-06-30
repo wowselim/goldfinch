@@ -1,6 +1,7 @@
 package co.selim.goldfinch.codegen
 
 import co.selim.goldfinch.annotation.GenerateProperties
+import co.selim.goldfinch.annotation.Level
 import co.selim.goldfinch.annotation.Visibility
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
@@ -61,6 +62,7 @@ class ServiceProcessor : AbstractProcessor() {
         ClassName.bestGuess(annotatedClass),
         propertiesWithTypes,
         visibilityModifier,
+        annotation.level == Level.NESTED,
       ).writeTo(processingEnv.filer)
     }
 
@@ -130,17 +132,31 @@ class ServiceProcessor : AbstractProcessor() {
     receiver: ClassName,
     properties: Map<String, TypeName>,
     visibilityModifier: KModifier,
+    nestProperties: Boolean,
   ): FileSpec {
-    val sealedClassName = ClassName(receiver.packageName, "${receiver.simpleName}Property")
-    val sealedClass = generateSealedClass(sealedClassName, visibilityModifier)
+    val sealedInterfaceName = ClassName(receiver.packageName, "${receiver.simpleName}Property")
+    val sealedInterface = generateSealedInterface(sealedInterfaceName, visibilityModifier)
+    val propertySpecs = properties.map { (propertyName, propertyType) ->
+      generatePropertyContainer(sealedInterfaceName, propertyName, propertyType, visibilityModifier, nestProperties)
+    }
     return generateFile(receiver)
-      .addType(sealedClass)
       .apply {
-        properties.forEach { (propertyName, propertyType) ->
-          addType(generatePropertyContainer(sealedClassName, propertyName, propertyType, visibilityModifier))
+        if (nestProperties)
+          addType(sealedInterface.addTypes(propertySpecs).build())
+        else {
+          addType(sealedInterface.build())
+          propertySpecs.forEach(::addType)
         }
       }
-      .addProperty(generatePropertyMapper(sealedClassName, receiver, properties, visibilityModifier))
+      .addProperty(
+        generatePropertyMapper(
+          sealedInterfaceName,
+          receiver,
+          properties,
+          visibilityModifier,
+          nestProperties
+        )
+      )
       .build()
   }
 

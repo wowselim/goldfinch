@@ -1,12 +1,18 @@
 package co.selim.goldfinch.example
 
 import co.selim.goldfinch.annotation.GenerateProperties
+import co.selim.goldfinch.annotation.Level
 import java.time.LocalDate
 
-@GenerateProperties
+@GenerateProperties(level = Level.TOP)
 internal data class Person(
   val name: String,
   val dateOfBirth: LocalDate,
+)
+
+@GenerateProperties
+internal data class Animal(
+  val name: String
 )
 
 fun main() {
@@ -23,5 +29,14 @@ fun main() {
       }
 
       println(message)
+    }
+
+  val animal = Animal("Bello")
+
+  animal.properties
+    .forEach { property ->
+      when (property) {
+        is AnimalProperty.Name -> println("Name: ${property.name}")
+      }
     }
 }

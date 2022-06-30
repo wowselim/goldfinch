@@ -13,14 +13,13 @@ internal fun generateFile(
   )
 }
 
-fun generateSealedClass(
+fun generateSealedInterface(
   name: ClassName,
   visibilityModifier: KModifier,
-): TypeSpec {
+): TypeSpec.Builder {
   return TypeSpec.interfaceBuilder(name)
     .addModifiers(KModifier.SEALED)
     .addModifiers(visibilityModifier)
-    .build()
 }
 
 fun generatePropertyContainer(
@@ -28,6 +27,7 @@ fun generatePropertyContainer(
   propertyName: String,
   propertyType: TypeName,
   visibilityModifier: KModifier,
+  isNested: Boolean,
 ): TypeSpec {
   val constructor = FunSpec.constructorBuilder()
     .addParameter(propertyName, propertyType)
@@ -38,10 +38,12 @@ fun generatePropertyContainer(
     .addModifiers(visibilityModifier)
     .build()
 
-  return TypeSpec.classBuilder("${propertyName.cap()}Property")
+  val typeName = if (isNested) propertyName.cap() else "${propertyName.cap()}Property"
+
+  return TypeSpec.classBuilder(typeName)
     .addModifiers(KModifier.VALUE)
     .addAnnotation(JvmInline::class.asTypeName())
-    .addModifiers(visibilityModifier)
+    .apply { if (!isNested) addModifiers(visibilityModifier) }
     .primaryConstructor(constructor)
     .addProperty(propertySpec)
     .addSuperinterface(sealedType)
@@ -53,9 +55,14 @@ internal fun generatePropertyMapper(
   receiver: ClassName,
   properties: Map<String, TypeName>,
   visibilityModifier: KModifier,
+  isNested: Boolean,
 ): PropertySpec {
   val propertyMappings = properties.map { (propertyName, _) ->
-    "${propertyName.cap()}Property($propertyName),"
+    if (isNested) {
+      "${sealedType.simpleName}.${propertyName.cap()}($propertyName),"
+    } else {
+      "${propertyName.cap()}Property($propertyName),"
+    }
   }.joinToString("\n      ")
 
   val code = """
