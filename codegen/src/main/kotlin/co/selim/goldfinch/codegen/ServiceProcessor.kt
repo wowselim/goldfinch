@@ -42,7 +42,9 @@ class ServiceProcessor : AbstractProcessor() {
         .associate { property ->
           val classifier = property.returnType.classifier as KmClassifier.Class
           val typeParameters = property.returnType.extractFullType()
-          val type = classifier.toClassName().safelyParameterizedBy(typeParameters)
+          val type = classifier.toClassName()
+            .safelyParameterizedBy(typeParameters)
+            .copy(nullable = property.returnType.isNullable)
           property.name to type
         }
 
@@ -73,9 +75,12 @@ class ServiceProcessor : AbstractProcessor() {
   private fun KmType.extractFullType(): List<TypeName> {
     return arguments.mapNotNull { typeProjection ->
       val params = typeProjection.type?.extractFullType()
+      val type = typeProjection.type
 
-      when (val classifier = typeProjection.type?.classifier) {
-        is KmClassifier.Class -> classifier.toClassName().safelyParameterizedBy(params)
+      when (val classifier = type?.classifier) {
+        is KmClassifier.Class -> classifier.toClassName()
+          .safelyParameterizedBy(params)
+          .copy(nullable = type.flags.isNullableType)
         is KmClassifier.TypeParameter,
         is KmClassifier.TypeAlias,
         null -> null
