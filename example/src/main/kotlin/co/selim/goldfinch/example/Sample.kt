@@ -11,11 +11,10 @@ internal data class Person(
 )
 
 @GenerateProperties
-internal data class Animal(
-  val name: String
-)
+internal data class Animal(val name: String)
 
 fun main() {
+
   val selim = Person("Selim Dinçer", LocalDate.of(1970, 1, 1))
 
   selim.properties
