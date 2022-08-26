@@ -1,6 +1,6 @@
 plugins {
   id 'org.jetbrains.kotlin.jvm'
-  id 'org.jetbrains.kotlin.kapt'
+  id 'com.google.devtools.ksp' version '1.7.10-1.0.6'
 }
 
 repositories {
@@ -10,5 +10,18 @@ repositories {
 dependencies {
   implementation "org.jetbrains.kotlin:kotlin-stdlib"
   implementation project(':annotation')
-  kapt project(':codegen')
+  ksp project(':codegen')
+}
+
+sourceSets {
+  main {
+    java {
+      srcDir(file("build/generated/ksp/main/kotlin"))
+    }
+  }
+  test {
+    java {
+      srcDir(file("build/generated/ksp/test/kotlin"))
+    }
+  }
 }
