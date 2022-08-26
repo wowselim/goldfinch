@@ -45,7 +45,7 @@ to your build script and include the following dependencies:
 
 ```groovy
 implementation 'com.github.wowselim.goldfinch:goldfinch-annotation:<latestVersion>'
-kapt 'com.github.wowselim.goldfinch:goldfinch-codegen:<latestVersion>'
+ksp 'com.github.wowselim.goldfinch:goldfinch-codegen:<latestVersion>'
 ```
 
 The latest version can be found in the
