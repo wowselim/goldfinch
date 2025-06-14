@@ -17,7 +17,10 @@ import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.TypeName
 
-class GoldfinchSymbolProcessor(private val logger: KSPLogger, private val codeGenerator: CodeGenerator) : SymbolProcessor {
+class GoldfinchSymbolProcessor(
+  private val logger: KSPLogger,
+  private val codeGenerator: CodeGenerator
+) : SymbolProcessor {
 
   private fun ClassName.safelyParameterizedBy(typeNames: List<TypeName>?): TypeName {
     return if (typeNames.isNullOrEmpty()) {
